@@ -96,8 +96,9 @@ resource "azurerm_network_interface" "terraform-NIC" {
   }
 }
 
-resource "azurerm_linux_virtual_machine" "terraform-VM1" {
-  name                  = "terraform-VM1-Azure"
+resource "azurerm_linux_virtual_machine" "terraform-VM" {
+  count                 = 3
+  name                  = "terraform-VM${count.index}-Azure"
   resource_group_name   = azurerm_resource_group.terraform-rg.name
   location              = azurerm_resource_group.terraform-rg.location
   size                  = "Standard_B1s"
@@ -116,7 +117,7 @@ resource "azurerm_linux_virtual_machine" "terraform-VM1" {
     storage_account_type = "Standard_LRS"
   }
 
-  source_image_reference {            // google publisher,offer,sku,version values for each disto
+  source_image_reference { // google publisher,offer,sku,version values for each disto
     publisher = "Canonical"
     offer     = "0001-com-ubuntu-server-jammy"
     sku       = "22_04-lts-gen2"
@@ -129,7 +130,7 @@ resource "azurerm_linux_virtual_machine" "terraform-VM1" {
       user         = "adminuser",
       identityfile = "C:\\Users\\Wiktor\\.ssh\\terraform-key"
     })
-    interpreter = var.host_os == "windows" ? ["Powershell", "-Command"] : ["bash","-c"]
+    interpreter = var.host_os == "windows" ? ["Powershell", "-Command"] : ["bash", "-c"]
   }
 
   tags = {
@@ -143,7 +144,7 @@ data "azurerm_public_ip" "terraform-ip-data" {
 }
 
 output "public_ip_address" {
-  value = "${azurerm_linux_virtual_machine.terraform-VM1.name}: ${data.azurerm_public_ip.terraform-ip-data.ip_address}"
+  value = "${join(", ", azurerm_linux_virtual_machine.terraform-VM.*.name)}: ${join(", ", data.azurerm_public_ip.terraform-ip-data.*.ip_address)}"
 }
 
 
